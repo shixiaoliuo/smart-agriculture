@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxl.agro.mapper.SysModuleMapper">
+
+
+    <!--根据角色id查询具备的权限-->
+    <select id="selectByRoleId" resultType="long" parameterType="long">
+        select id
+        from sa_sys_module
+        where id in (select module_id from sa_sys_role_module where role_id = #{roleId})
+    </select>
+
+
+    <!--查询菜单-->
+    <select id="selectByUserId" parameterType="long" resultType="sysModule">
+        select id, name, curl, parent_id
+        from sa_sys_module
+        where parent_id is null
+          and id in (select module_id
+                     from sa_sys_role_module
+                     where role_id in (select role_id from sa_sys_user_role where user_id = #{userId}))
+    </select>
+    <select id="selectParentId" resultType="sysModule">
+        select id, parent_id, parent_name, name, layer_num, is_leaf, ico, cpermission, curl, ctype, state, belong, cwhich, quote_num, remark, order_no
+        from sa_sys_module
+        where parent_id is null
+    </select>
+
+    <!--根据用户id删除中间表数据-->
+    <delete id="deleteByRoleId" parameterType="long">
+        delete
+        from sa_sys_role_module
+        where role_id = #{roleId}
+    </delete>
+
+    <!--插入用户角色中间表数据-->
+    <insert id="insertRoleModule" parameterType="map">
+        insert into sa_sys_role_module(role_id,module_id) values
+        <foreach collection="moduleIds" item="moduleId" separator=",">
+            (#{roleId},#{moduleId})
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设施管理</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../../styles/common.css"/>
+    <link rel="stylesheet" href="../../../styles/page.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="Facilities-app">
+    <div class="container">
+        <div class="tableBar">
+            <el-input
+                    v-model="input"
+                    placeholder="请输入大棚名称"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+                <i
+                        slot="prefix"
+                        class="el-input__icon el-icon-search"
+                        style="cursor: pointer"
+                        @click="init"
+                ></i>
+            </el-input>
+            <div class="tableLab">
+                <el-button type="primary" class="continue" @click="addClass('class')"> + 新增大棚</el-button>
+            </div>
+        </div>
+        <el-table :data="tableData" stripe class="tableBox">
+
+            <el-table-column prop="facilitiesName" label="大棚名称"/>
+            </el-table-column>
+            <el-table-column prop="categoryName" label="大棚分类名称"/>
+            </el-table-column>
+            <el-table-column prop="linkman" label="联系人"/>
+            </el-table-column>
+            <el-table-column prop="linkmanTel" label="联系人电话"/>
+            </el-table-column>
+            <el-table-column prop="provinceName" label="省"/>
+            </el-table-column>
+            <el-table-column prop="cityName" label="市"/>
+            </el-table-column>
+            <el-table-column prop="townName" label="乡镇"/>
+            </el-table-column>
+            <el-table-column prop="occupationArea" label="大棚占地面积"/>
+            </el-table-column>
+            <el-table-column prop="deviceCount" label="大棚包含硬件数量"/>
+            </el-table-column>
+            <el-table-column prop="state" label="大棚状态"/>
+            <template slot-scope="scope">
+                {{ String(scope.row.state) === '1' ? '可用' : '不可用' }}
+            </template>
+            </el-table-column>
+            <el-table-column prop="remark" label="大棚介绍"/>
+            </el-table-column>
+            <el-table-column prop="companyName" label="所属企业名称"/>
+            </el-table-column>
+            <el-table-column prop="createTime" label="创建时间"/>
+            </el-table-column>
+
+
+            <el-table-column label="操作" width="160" align="center">
+                <template slot-scope="scope">
+                    <el-button type="text" size="small" class="blueBug" @click="editHandle(scope.row)">修改</el-button>
+                    <el-button type="text" size="small" class="delBut non" @click="deleteHandle(scope.row.id)">停用
+                    </el-button>
+                    <el-button type="text" size="small" class="blueBug" @click="toBIIndex(scope.row.id)">查看数据
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[5, 10, 15, 20]"
+                :page-size="pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="counts"
+                @size-change="handleSizeChange"
+                :current-page.sync="page"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+    </div>
+    <el-dialog :title="classData.title" :visible.sync="classData.dialogVisible" width="30%" :before-close="handleClose">
+        <el-form class="demo-form-inline" label-width="100px">
+
+
+            <el-form-item label="大棚名称：">
+                <el-input v-model="classData.facilitiesName" placeholder="请输入设施名称" maxlength="14"/>
+            </el-form-item>
+
+
+            <el-form-item label="所属企业：">
+                <el-select v-model="classData.companyId" placeholder="请选择所属企业"
+                           @click.native="selectCompanyOptionsFun()">
+
+                    <el-option
+                            v-for="item in companyOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                            @click.native="getCompanyOptionsValue(item.label)"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+
+            <el-form-item label="大棚分类：">
+                <el-select v-model="classData.categoryId" placeholder="请选择分类"
+                           @click.native="selectFacilitiesCategoryOptionsFun()">
+
+                    <el-option
+                            v-for="item in options"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                            @click.native="getOptionsValue(item.label)"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+
+            <el-form-item label="联系人：">
+                <el-input v-model="classData.linkman" placeholder="请输入联系人"/>
+            </el-form-item>
+            <el-form-item label="联系人电话：">
+                <el-input v-model="classData.linkmanTel" placeholder="请输入联系人电话"/>
+            </el-form-item>
+
+            <el-form-item label="省：">
+                <el-input v-model="classData.provinceName" placeholder="请输入省"/>
+            </el-form-item>
+
+            <el-form-item label="市：">
+                <el-input v-model="classData.cityName" placeholder="请输入市"/>
+            </el-form-item>
+
+            <el-form-item label="乡镇：">
+                <el-input v-model="classData.townName" placeholder="请输入乡镇"/>
+            </el-form-item>
+
+            <el-form-item label="占地面积：">
+                <el-input v-model="classData.occupationArea" placeholder="请输入占地面积"/>
+            </el-form-item>
+
+            <el-form-item label="包含硬件数量：">
+                <el-input v-model="classData.deviceCount" placeholder="请输入包含硬件数量"/>
+            </el-form-item>
+
+
+            <el-form-item label="设施状态：">
+                <template>
+                    <el-radio v-model="classData.state" label="1">可用</el-radio>
+                    <el-radio v-model="classData.state" label="0">不可用</el-radio>
+                </template>
+            </el-form-item>
+
+            <el-form-item label="设施介绍：">
+                <el-input v-model="classData.remark" placeholder="请输入设施介绍"/>
+            </el-form-item>
+
+
+            </el-form-item>
+
+
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+        <el-button size="medium" @click="classData.dialogVisible = false">取 消</el-button>
+        <el-button type="primary" size="medium" @click="submitForm()">确 定</el-button>
+        <el-button
+                v-if="action != 'edit'"
+                type="primary"
+                size="medium"
+                class="continue"
+                @click="submitForm('go')"
+        > 保存并继续添加 </el-button>
+      </span>
+    </el-dialog>
+</div>
+<script src="../../../plugins/vue/vue.js"></script>
+<script src="../../../plugins/element-ui/index.js"></script>
+<script src="../../../plugins/axios/axios.min.js"></script>
+<script src="../../../js/request.js"></script>
+<script src="../../../api/sysRole.js"></script>
+<script src="../../../api/facilities.js"></script>
+<script src="../../../api/facilitiesCategory.js"></script>
+<script src="../../../api/company.js"></script>
+<script type="text/javascript">
+    new Vue({
+        el: '#Facilities-app',
+        data() {
+            return {
+                action: '',
+                tableData: [],
+                type: '',
+                classData: {
+                    'title': '添加大棚',
+                    'dialogVisible': false,
+                    'id': '',
+                    'categoryId': '',
+                    'categoryName': '',
+                    'facilitiesName': '',
+                    'provinceName': '',
+                    'cityName': '',
+                    'townName': '',
+                    'occupationArea': '',
+                    'deviceCount': '',
+                    'state': '',
+                    'userId': '',
+                    'userName': '',
+                    'remark': '',
+                    'createBy': '',
+                    'createGroup': '',
+                    'createTime': '',
+                    'updateBy': '',
+                    'updateGroup': '',
+                    'updateTime': '',
+                    'companyId': '',
+                    'companyName': '',
+                    'linkman': '',
+                    'linkmanTel': ''
+
+                },
+                options: [],
+                companyOptions: [],
+                companyNameList2: [],
+                page: 1,
+                pageSize: 5,
+                counts: 0,
+                input: ''
+            }
+        },
+        methods: {
+            async init() {
+                const params = {
+                    page: this.page,//当前页码
+                    pageSize: this.pageSize,//每页大小
+                    name: this.input ? this.input : undefined//企业名称
+                };
+                await getFacilitiesFacilitiesPage(params).then(res => {
+                    console.log(res.data.records)
+                    if (String(res.code) === '1') {
+                        this.tableData = res.data.records;
+                        this.counts = res.data.total;
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            handleQuery() {
+                this.page = 1;
+                this.init();
+            },
+            // 添加
+            addClass(st) {
+                this.classData.title = '新增大棚';
+
+                this.action = 'add';
+
+
+                this.classData.id = '';
+                this.classData.facilitiesName = '';
+                this.classData.categoryId = '';
+                this.classData.categoryName = '';
+                // this.classData.remark = '';
+                this.classData.provinceName = '';
+                this.classData.cityName = '';
+                this.classData.townName = '';
+                this.classData.occupationArea = '';
+                this.classData.deviceCount = '';
+                this.classData.state = '';
+                this.classData.userId = '';
+                this.classData.userName = '';
+                this.classData.remark = '';
+                this.classData.createBy = '';
+                this.classData.createGroup = '';
+                this.classData.createTime = '';
+                this.classData.updateBy = '';
+                this.classData.updateGroup = '';
+                this.classData.updateTime = '';
+                this.classData.companyId = '';
+                this.classData.companyName = '';
+                this.classData.linkman = '';
+                this.classData.linkmanTel = '';
+
+
+                this.classData.dialogVisible = true
+
+            },
+
+            selectFacilitiesCategoryOptionsFun() {
+
+                const params = {};
+
+                selectFacilitiesCategoryOptions(params).then(res => {
+                    console.log(res)
+                    console.log(res.data)
+                    const resData = res.data
+
+
+                    if (String(res.code) === '1') {
+                        this.options = []
+                        for (var i = 0; i < resData.length; i++) {
+                            this.options.push({"value": resData[i].value, "label": resData[i].label})
+                        }
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+
+
+            getOptionsValue(e) {
+                this.classData.categoryName = e
+
+            },
+
+            //查看数据的时候跳转到展示页面
+            toBIIndex(facilitiesId) {
+                // window.location.href="http://localhost:9002/BI/index.html?facilitiesId="+facilitiesId
+
+                window.open("http://localhost:9001/BI/index.html?facilitiesId=" + facilitiesId)
+            },
+
+            selectCompanyOptionsFun() {
+
+                const params = {};
+
+                selectCompanyOptions(params).then(res => {
+                    console.log(res)
+                    console.log(res.data)
+                    const resData = res.data
+
+
+                    if (String(res.code) === '1') {
+                        this.companyOptions = []
+                        for (var i = 0; i < resData.length; i++) {
+                            this.companyOptions.push({"value": resData[i].value, "label": resData[i].label})
+                        }
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+
+
+            getCompanyOptionsValue(e) {
+                this.classData.companyName = e
+
+            },
+
+            //修改
+            editHandle(dat) {
+                console.log(dat.state)
+                //赋值
+                this.classData.title = '修改大棚';
+                this.action = 'edit';
+                this.classData.id = dat.id;
+                this.classData.facilitiesName = dat.facilitiesName;
+                this.classData.categoryId = dat.categoryId;
+                this.classData.categoryName = dat.categoryName;
+                // this.classData.remark = dat.remark;
+                this.classData.provinceName = dat.provinceName;
+                this.classData.cityName = dat.cityName;
+                this.classData.townName = dat.townName;
+                this.classData.occupationArea = dat.occupationArea;
+                this.classData.deviceCount = dat.deviceCount;
+                this.classData.state = dat.state;
+                this.classData.userId = dat.userId;
+                this.classData.userName = dat.userName;
+                this.classData.remark = dat.remark;
+                this.classData.createBy = dat.createBy;
+                this.classData.createGroup = dat.createGroup;
+                this.classData.createTime = dat.createTime;
+                this.classData.updateBy = dat.updateBy;
+                this.classData.updateGroup = dat.updateGroup;
+                this.classData.updateTime = dat.updateTime;
+                this.classData.companyId = dat.companyId;
+                this.classData.companyName = dat.companyName;
+                this.classData.linkman = dat.linkman;
+                this.classData.linkmanTel = dat.linkmanTel;
+
+
+                this.classData.dialogVisible = true;//打开修改框
+            },
+            // 关闭弹窗
+            handleClose(st) {
+                this.classData.dialogVisible = false
+            },
+            //删除
+            deleteHandle(id) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    'confirmButtonText': '确定',
+                    'cancelButtonText': '取消',
+                    'type': 'warning'
+                }).then(() => {
+                    deleteFacilitiesFacilities(id).then(res => {
+                        if (res.code === 1) {
+                            this.$message.success('删除成功！');
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                })
+            },
+            //数据提交
+            submitForm(st) {
+                const classData = this.classData;
+                if (this.action === 'add') {
+
+                    addFacilitiesFacilities(classData).then(res => {
+                        if (res.code === 1) {
+                            this.$message.success('添加成功！')
+                            if (!st) {
+                                this.classData.dialogVisible = false
+                            } else {
+                                this.classData = {};
+                            }
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+
+                } else if (this.action === 'edit') {
+                    editFacilitiesFacilities(classData).then(res => {
+                        if (res.code === 1) {
+                            this.$message.success('修改成功！');
+                            this.classData.dialogVisible = false;
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+
+                } else {
+                    this.$message.error('请输入名称')
+                }
+            },
+            // 全部操作
+            handleSelectionChange(val) {
+                let checkArr = []
+                val.forEach((n) => {
+                    checkArr.push(n.id)
+                })
+                this.checkList = checkArr
+            },
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.init()
+            },
+            handleCurrentChange(val) {
+                this.page = val
+                this.init()
+            }
+        },
+        created() {
+            this.init()
+        },
+
+    })
+</script>
+</body>
+</html>

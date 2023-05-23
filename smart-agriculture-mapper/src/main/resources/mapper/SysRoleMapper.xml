@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxl.agro.mapper.SysRoleMapper">
+
+    <!--根据用户id查询具备的角色-->
+    <select id="selectByUserId" resultType="Long" parameterType="long">
+        select id
+        from sa_sys_role
+        where id in (select role_id from sa_sys_user_role where user_id = #{userId})
+    </select>
+    <select id="selectByRoleId" resultType="com.lxl.agro.pojo.SysModule">
+        select id,
+               parent_id,
+               parent_name,
+               name,
+               layer_num,
+               is_leaf,
+               ico,
+               cpermission,
+               curl,
+               ctype,
+               state,
+               belong,
+               cwhich,
+               quote_num,
+               remark,
+               order_no
+        from sa_sys_module
+        where id in (select module_id from sa_sys_role_module where role_id = #{roleId})
+          and parent_id is null
+    </select>
+    <select id="selectByParentId" resultType="com.lxl.agro.pojo.SysModule">
+        select id, parent_id, parent_name, name, layer_num, is_leaf, ico, cpermission, curl, ctype, state, belong, cwhich, quote_num, remark, order_no
+        from sa_sys_module
+        where parent_id = #{parentId}
+    </select>
+
+    <!--插入用户角色中间表数据-->
+    <insert id="insertUserRole" parameterType="map">
+        insert into sa_sys_user_role(user_id,role_id) values
+        <foreach collection="roleIds" item="roleId" separator=",">
+            (#{userId},#{roleId})
+        </foreach>
+    </insert>
+    <insert id="insertRoleModule">
+        insert into sa_sys_role_module(role_id, module_id)
+        VALUES
+        <foreach collection="moduleIds" item="moduleId" separator=",">
+            (#{roleId},#{moduleId})
+        </foreach>
+    </insert>
+
+    <!--根据用户id删除中间表数据-->
+    <delete id="deleteByUserId" parameterType="long">
+        delete
+        from sa_sys_user_role
+        where user_id = #{userId}
+    </delete>
+    <delete id="deleteByRoleId">
+        delete
+        from sa_sys_role_module
+        where role_id = #{roleId}
+    </delete>
+</mapper>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>智慧农业</title>
+    <link rel="stylesheet" href="./css/login.css">
+</head>
+
+<body>
+<div class="content">
+    <div class="left">
+        <p>智慧农业</p>
+        <div id="earth"></div>
+    </div>
+    <div class="middle" id="mainDiv">
+        <form id="myform">
+            <div class="login">
+                <input type="text" placeholder="请输入登录名" id="account"/>
+            </div>
+            <div class="login">
+                <input type="password" placeholder="请输入密码" id="password"/>
+            </div>
+        </form>
+
+    </div>
+    <div class="right">
+        <div id="btn" title="Login">
+            <div class="btn0"></div>
+            <div class="btn1"></div>
+            <div class="btn2"></div>
+        </div>
+    </div>
+</div>
+<div class="warning" style="display: none;" id="warningDiv">
+    <span>×</span>账号密码错误，请重新输入
+</div>
+
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/echarts.js"></script>
+<script src="js/echarts-gl.min.js"></script>
+<script src="js/world.js"></script>
+<script>
+    var earth = echarts.init(document.getElementById('earth'));
+    //自制纹理贴图
+    var canvas = document.createElement('canvas');
+    var mapChart = echarts.init(canvas, null, {
+        width: 4096, height: 2048
+    });
+    mapChart.setOption({
+        backgroundColor: 'rgba(64,75,93,.1)',
+        series: [
+            {
+                type: 'map',
+                map: 'world',
+                // 绘制完整尺寸的 echarts 实例
+                top: 0, left: 0,
+                right: 0, bottom: 0,
+                boundingCoords: [[-180, 90], [180, -90]],
+                itemStyle: {
+                    normal: {
+                        areaColor: 'rgba(176,203,37,1)',
+                        borderColor: 'rgb(0,0,0)'
+                    },
+                    emphasis: {
+                        areaColor: 'rgba(176,203,37,1)'
+                    }
+                }
+            }
+        ]
+    });
+    var option = {
+        globe: {
+            baseTexture: mapChart,
+            viewControl: {
+                rotateSensitivity: 0,
+                panSensitivity: 0,
+                zoomSensitivity: 0
+            }
+        }
+    };
+    earth.setOption(option);
+
+
+    function toIndexHtmlFun(e) {
+
+        window.location.href = "index.html?facilitiesId=" + e
+    }
+
+    //登录
+    $('#btn').on('click', function () {
+        var account = $('#account').val();
+        var password = $('#password').val();
+        if (account == '' || password == '') {
+
+            $('.warning').show().addClass('bounceIn');
+            return
+        }
+        /*  if(account==='1234567'&&password==='1234567'){
+              window.location.href="index.html";
+          }*/
+        $.ajax({
+            url: 'http://127.0.0.1:8080/sys/user/login',
+            type: 'post',
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({'username': $('#account').val(), 'password': $('#password').val()}),
+            success: function (result) {
+                console.log(result.data);
+                window.localStorage.setItem("authorization", result.data);
+                if (result.code != 1) {
+                    $('.warning').show().addClass('bounceIn');
+                } else {
+                    //根据公司id查询出所有的大棚
+                    $.ajax({
+                        url: 'http://127.0.0.1:8080/facilities/facilities/selectOptionsByCompanyId',
+                        type: 'get',
+                        data: {'companyId': '1'},//此处不能这么写，要从登录信息里获取1630733260198899714
+                        headers: {
+                            "Authorization": window.localStorage.getItem("authorization")
+                        },
+                        success: function (result) {
+                            console.log(result.data);
+                            document.getElementById("warningDiv").innerHTML = "<div><h1>请选择所属大棚</h1><div>";
+                            var strMainDiv = "<div style='color: white'>请选择所属大棚";
+                            for (var i = 0; i < result.data.length; i++) {
+                                var getV = (result.data[i].value).toString()
+
+                                strMainDiv += "<li onclick='toIndexHtmlFun(\"" + getV + "\")'>" + result.data[i].label + " </li>"
+                            }
+                            strMainDiv += "</div>"
+                            document.getElementById("mainDiv").innerHTML = strMainDiv;
+                        },
+                        error: function (data) {
+                            alert("请检查您的网络或者查看服务器是否启动")
+                        }
+                    })
+                    //根据公司id查询出所有的大棚
+                    //window.location.href="selectFacilities.html";
+                }
+                /* result = handleError(result);
+                 if (!result.IsError) {
+                     window.location = '@Url.Action("Index", "Home")';
+                 }*/
+            },
+            error: function (data) {
+                alert("请检查您的网络或者查看服务器是否启动")
+            }
+        })
+    })
+</script>
+</body>
+
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计分析</title>
+    <script src="../../plugins/vue/vue.js"></script>
+    <script src="../../plugins/element-ui/index.js"></script>
+    <script src="../../plugins/axios/axios.min.js"></script>c
+    <script src="../../js/request.js"></script>
+    <script src="../../js/echarts.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../styles/common.css"/>
+    <link rel="stylesheet" href="../../styles/page.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="stat">
+    <div class="container">
+        <div class="tableBar"  style="display: inline-block">
+            <el-select v-model="facilitiesValue" placeholder="请选择农业设施" @change="showFacilitiesValue()">
+                <el-option
+                        v-for="item in facilitiesList"
+                        :key="item.id"
+                        :label="item.name"
+                        :value="item.name">
+                </el-option>
+            </el-select>
+
+            <el-select v-model="categoryValue" placeholder="请选择统计内容">
+                <el-option
+                        v-for="item in options"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+
+            <el-select v-model="timeValue" placeholder="请选择统计时间">
+                <el-option
+                        v-for="item in durations"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+
+            <el-button  type="primary" class="continue" @click="findStat()" > 查询统计 </el-button>
+
+            <el-button type="success" round>导出excel</el-button>
+            <el-button type="info" round>导出pdf</el-button>
+        </div>
+        <div id="myStat"></div>
+    </div>
+</div>
+
+<script>
+    new Vue({
+        el: '#stat',
+        data:{
+            facilitiesList:[
+                {
+                    id:1,
+                    name:'北京市昌平区沙河镇xx村试验田7号农棚',
+                },
+                {
+                    id:2,
+                    name:'北京市昌平区沙河镇xx村试验田9号农棚',
+                },
+            ],//农业设施列表
+            options:[
+                {
+                    label:'温度',
+                    value:'温度'
+                },
+                {
+                    label:'湿度',
+                    value:'湿度'
+                },
+                {
+                    label:'酸碱度',
+                    value:'酸碱度'
+                },
+            ],
+            durations:[
+                {
+                    label:'一天',
+                    value:'day',
+                },
+                {
+                    label:'4小时',
+                    value:'hour',
+                },
+                {
+                    label:'7天',
+                    value:'week',
+                },
+                {
+                    label:'30天',
+                    value:'month',
+                },
+            ],
+            facilitiesValue:'',
+            categoryValue:'',
+            timeValue:'',
+        },
+        methods: {
+            showFacilitiesValue(){
+              alert(this.facilitiesValue);
+            },
+            async init() {
+                //动态初始化当前登录用户所可以查看的大棚信息
+            },
+            findStat(){
+                alert("我去查询了......");
+                let option = {
+                    title: {
+                        text: 'Temperature Change in the Coming Week'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLabel: {
+                            formatter: '{value} °C'
+                        }
+                    },
+                    series: [
+                        {
+                            data: [11,12,13,11,13,15,20],
+                            type: 'line',
+                            smooth: true
+                        }
+                    ]
+                };
+
+                let statDom = document.querySelector("#myStat");
+                let high = parseFloat(window.screen.availHeight)*0.7;
+                let width = parseFloat(window.screen.availWidth)*0.7;
+                alert(high+","+width);
+                statDom.style.width = width+'px';
+                statDom.style.height = high+'px';
+                let myChart = echarts.init(statDom);
+                myChart.setOption(option);
+            }
+        },
+        created() {
+            this.init()
+        },
+    })
+</script>
+</body>
+</html>

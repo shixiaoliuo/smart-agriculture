@@ -1,0 +1,33 @@
+server:
+  port: 9001  #管理端端口号
+spring:
+  application:
+    name: smart-agriculture-web # 应用名称
+  datasource: # 数据源配置
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/smart_agriculture?useUnicode=true&characterEncoding=utf-8&useSSL=false
+      username: root
+      password: root
+  servlet:
+    multipart:
+      max-request-size: 100MB # 最大请求文件大小,默认10MB
+      max-file-size: 10MB # 单个请求文件大小,默认1MB
+#  redis:
+#    host: localhost
+#    port: 6379
+#    database: 0
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:/mappers/**.xml
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID # id生成策略类型
+  type-aliases-package: com.lxl.agro.pojo
+
+IoT:
+  url: http://10.9.137.168/
+  key: 1628951832748294144
+  secuirt: bbe204b3-e1be-4c5f-9448-e186c0a5c7a6

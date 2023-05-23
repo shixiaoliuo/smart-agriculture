@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计页面</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../../styles/common.css"/>
+    <link rel="stylesheet" href="../../../styles/page.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="DEVICE-app">
+    <div class="container">
+
+
+        <div class="tableBar">
+            <span>
+
+
+            <el-select v-model="facilitiesIdSelect"
+                       placeholder="请选择所属大棚"
+                       @click.native="selectFacilitiesFun()"
+                       style="width: 250px;float: left"
+            >
+
+                <el-option
+                        v-for="item in facilitiesOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+
+                        @click.native="handleQuery"
+                >
+                </el-option>
+            </el-select>
+
+            <el-select v-model="deviceIdSelect"
+                       placeholder="请选择设备"
+                       @click.native="selectDeviceFun()"
+                       style="width: 250px;float: left"
+            >
+
+                <el-option
+                        v-for="item in deviceOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+
+                        @click.native="handleQuery"
+                >
+                </el-option>
+            </el-select>
+
+            <el-select v-model="daysIdSelect" placeholder="请选择统计时间">
+                <el-option
+                        v-for="item in days"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                        @click.native="handleQuery"
+                >
+
+                </el-option>
+            </el-select>
+
+        <el-button type="primary" size="medium" @click="exportLogs">导出</el-button>
+
+            </span>
+        </div>
+
+        <div>
+            <span id="echartsTHTD" style="width: 800px;height:400px; float: left"> </span>
+            <span id="echartsHV" style="width: 800px;height:400px; float: left"> </span>
+
+
+        </div>
+
+
+        <el-table :data="tableData" stripe class="tableBox">
+
+
+            <el-table-column prop="deviceName" label="设备名称"/>
+            </el-table-column>
+            <el-table-column prop="facilitiesName" label="所属大棚"/>
+            </el-table-column>
+            <!--   <el-table-column  prop="facilitiesId" label="所属农业设施id"  /></el-table-column>
+               <el-table-column  prop="typeId" label="设备类型id"  /></el-table-column>-->
+            <el-table-column prop="typeName" label="设备类型名称"/>
+            </el-table-column>
+
+
+            <el-table-column prop="resultCode" label="返回结果code"/>
+            </el-table-column>
+            <el-table-column prop="resultMessage" label="返回结果说明"/>
+            </el-table-column>
+            <!--      <el-table-column  prop="resultData" label="返回结果"  /></el-table-column>-->
+            <el-table-column prop="resultDataValue" label="返回结果核心数据"/>
+            </el-table-column>
+
+            <el-table-column prop="createTime" label="创建时间"/>
+            </el-table-column>
+
+
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[5, 10, 15, 20]"
+                :page-size="pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="counts"
+                @size-change="handleSizeChange"
+                :current-page.sync="page"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+
+    </div>
+
+
+</div>
+<script src="../../../plugins/vue/vue.js"></script>
+<script src="../../../plugins/element-ui/index.js"></script>
+<script src="../../../plugins/axios/axios.min.js"></script>
+<script src="../../../js/request.js"></script>
+<script src="../../../api/device.js"></script>
+<script src="../../../api/deviceDataLogs.js"></script>
+<script src="../../../api/facilities.js"></script>
+<script src="../../../js/echarts.js"></script>
+<script type="text/javascript">
+
+
+    new Vue({
+        el: '#DEVICE-app',
+        data() {
+            return {
+                action: '',
+                tableData: [],
+                type: '',
+                classData: {
+                    'title': '添加设备',
+                    'dialogVisible': false,
+                    'id': '',
+                    'deviceName': '',
+                    'facilitiesId': '',
+                    'facilitiesName': '',
+                    'typeId': '',
+                    'typeName': '',
+                    'state': '1',
+                    'flag': '1',
+                    'remark': ''
+
+                },
+                deviceId: '',
+                daysIdSelect: '',
+                deviceIdSelect: '',
+                durationsIdSelect: '',
+                facilitiesIdSelect: '',
+                deviceTypeOptions: [],
+                deviceOptions: [],
+                facilitiesOptions: [],
+                companyNameList: [],
+                companyNameList2: [],
+                days: [
+                    {
+                        label: '一天',
+                        value: '1',
+                    },
+                    {
+                        label: '7天',
+                        value: '7',
+                    },
+                    {
+                        label: '30天',
+                        value: '30',
+                    },
+                ],
+                page: 1,
+                pageSize: 5,
+                counts: 0,
+                input: ''
+            }
+        },
+        methods: {
+            async init() {
+
+                const params = {
+                    page: this.page,//当前页码
+                    pageSize: this.pageSize,//每页大小
+                    facilitiesId: this.facilitiesIdSelect ? this.facilitiesIdSelect : undefined,//设施id->大棚id
+                    deviceId: this.deviceIdSelect ? this.deviceIdSelect : undefined,
+                    day: this.daysIdSelect ? this.daysIdSelect : undefined,
+                    resultCode: 200   //返回结果码
+                };
+                await getDeviceDateLogsPage(params).then(res => {
+                    console.log(res.data.records)
+                    if (String(res.code) === '1') {
+                        this.tableData = res.data.records;
+                        this.counts = res.data.total;
+
+
+                        var temperature = [];
+                        var humidity = [];
+                        var HV = [];
+                        var XData = [];
+                        var deviceType = 1;
+                        for (var i = 0; i < res.data.records.length; i++) {
+
+                            if (res.data.records[i].resultCode == 200) {
+                                if (res.data.records[i].typeId == 1) {
+                                    var dateValue = res.data.records[i].resultDataValue
+                                    var t = dateValue.split(',')[0].split('=')[1]
+                                    var h = dateValue.split(',')[1].split('=')[1]
+
+                                    temperature.push(t)
+                                    humidity.push(h)
+                                    XData.push(res.data.records[i].createTime)
+                                    deviceType = 1
+                                }
+
+                                if (res.data.records[i].typeId == 5) {
+                                    var dateValue = res.data.records[i].resultDataValue
+
+                                    HV.push(dateValue)
+                                    XData.push(res.data.records[i].createTime)
+                                    deviceType = 5
+                                }
+                            }
+                        }
+
+                        if (deviceType == 1) {
+                            this.funTHTD(XData, temperature, humidity)
+                            document.getElementById("echartsTHTD").style.display = 'block';
+                            document.getElementById("echartsHV").style.display = 'none';
+                        } else if (deviceType == 5) {
+
+                            this.funHV(XData, HV)
+                            document.getElementById("echartsHV").style.display = 'block';
+                            document.getElementById("echartsTHTD").style.display = 'none';
+
+
+                        }
+
+
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            handleQuery() {
+                this.page = 1;
+                this.init();
+            },
+            clearQuery() {
+                this.page = 1;
+                this.facilitiesIdSelect = '';
+                this.input = '';
+                this.init();
+            },
+            // 添加
+            addClass(st) {
+                this.classData.title = '新增设备';
+                this.action = 'add';
+                this.classData.dialogVisible = true
+
+            },
+            exportLogs() {
+                // window.location.href = "/device/dataLogs/export" +
+                //     "?facilitiesId=" + this.facilitiesIdSelect + "&" +
+                //     "deviceId=" + this.deviceIdSelect + "&" +
+                //     "day=" + this.daysIdSelect + "&" +
+                //     "resultCode=200"
+                const params = {
+                    facilitiesId: this.facilitiesIdSelect ? this.facilitiesIdSelect : undefined,//设施id->大棚id
+                    deviceId: this.deviceIdSelect ? this.deviceIdSelect : undefined,
+                    day: this.daysIdSelect ? this.daysIdSelect : undefined,
+                    resultCode: 200   //返回结果码
+                };
+                deviceDateLogsExport(params).then(res => {
+                    console.log(res)
+                    if (res.code == 1) {
+                        this.$message.success(res.data)
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+
+
+            /* exportLogs(){
+                 const params = {
+                     page: this.page,//当前页码
+                     pageSize: this.pageSize,//每页大小
+                     facilitiesId: this.facilitiesIdSelect ? this.facilitiesIdSelect : undefined,//设施id->大棚id
+                     deviceId: this.deviceIdSelect ? this.deviceIdSelect : undefined,
+                     day: this.daysIdSelect ? this.daysIdSelect:undefined,
+                     resultCode: 200   //返回结果码
+                 };
+                  deviceDateLogsExport(params).then(res => {
+
+                 }).catch(err => {
+                     this.$message.error('请求出错了：' + err)
+                 })
+             },*/
+            //获取所属大棚的options
+            selectFacilitiesFun() {
+                selectFacilitiesOptions().then(res => {
+                    console.log(res.data)
+                    const resData = res.data
+                    if (String(res.code) === '1') {
+                        this.facilitiesOptions = []
+                        for (var i = 0; i < resData.length; i++) {
+                            this.facilitiesOptions.push({"value": resData[i].value, "label": resData[i].label})
+                        }
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            getFacilitiesOptionsValue(e) {
+                this.classData.facilitiesName = e;
+            },
+
+            //获取设备的options
+            selectDeviceFun() {
+
+
+                selectDeviceOptions(this.facilitiesIdSelect).then(res => {
+                    console.log(res.data)
+                    const resData = res.data
+                    if (String(res.code) === '1') {
+                        this.deviceOptions = []
+                        for (var i = 0; i < resData.length; i++) {
+                            this.deviceOptions.push({"value": resData[i].value, "label": resData[i].label})
+                        }
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+
+
+            // 全部操作
+            handleSelectionChange(val) {
+                let checkArr = []
+                val.forEach((n) => {
+                    checkArr.push(n.id)
+                })
+                this.checkList = checkArr
+            },
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.init()
+            },
+            handleCurrentChange(val) {
+                this.page = val
+                this.init()
+            },
+
+            goBack() {
+                window.history.go(-1)
+            },
+            funTHTD(X, T, H) {
+
+                // 指定图表的配置项和数据
+                option = {
+                    title: {
+                        text: '温度和湿度'
+                    },
+                    legend: {
+                        data: ['温度', '湿度'],
+                        top: 0,
+                        textStyle: {
+                            color: '#fff'
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: X
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            name: '湿度',
+                            type: 'line',
+                            data: H,
+                            smooth: true,
+                            itemStyle: {
+                                normal: {
+                                    color: 'red'
+                                }
+                            }
+                        },
+                        {
+                            name: '温度',
+                            type: 'line',
+                            data: T,
+                            smooth: true,
+                            itemStyle: {
+                                normal: {
+                                    color: "#B0CC35"
+                                }
+                            }
+                        },
+                    ]
+                };
+                // 基于准备好的dom，初始化echarts实例
+
+                var myChart = echarts.init(document.getElementById('echartsTHTD'));
+                // 使用刚指定的配置项和数据显示图表。
+                myChart.setOption(option);
+            },
+
+            funHV(X, Hv) {
+
+
+                // 指定图表的配置项和数据
+                option3 = {
+                    title: {
+                        text: '光照'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: X
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            data: Hv,
+                            type: 'line',
+                            smooth: true
+                        }
+                    ]
+                };
+                // 基于准备好的dom，初始化echarts实例
+
+                var myChartHV = echarts.init(document.getElementById('echartsHV'));
+                // 使用刚指定的配置项和数据显示图表。
+                myChartHV.setOption(option3);
+            }
+
+        },
+
+
+        created() {
+            this.init()
+        }
+
+
+    })
+</script>
+</body>
+</html>

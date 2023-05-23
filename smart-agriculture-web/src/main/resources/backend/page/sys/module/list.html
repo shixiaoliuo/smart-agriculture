@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能管理</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../../styles/common.css"/>
+    <link rel="stylesheet" href="../../../styles/page.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="sysModule-app">
+    <div class="container">
+        <div class="tableBar">
+            <el-input v-model="conditions.input" placeholder="请输入功能名称" style="width: 250px" clearable  @keyup.enter.native="handleQuery">
+                <i slot="prefix" class="el-input__icon el-icon-search" style="cursor: pointer" @click="init"></i>
+            </el-input>
+        </div>
+        <el-table  :data="pagination.tableData"  stripe  class="tableBox" >
+            <el-table-column prop="parentName" label="父菜单名称"></el-table-column>
+            <el-table-column prop="name" label="菜单名称"></el-table-column>
+            <el-table-column prop="cpermission" label="菜单权限名称"></el-table-column>
+            <el-table-column prop="curl" label="菜单对应链接"></el-table-column>
+            <el-table-column label="菜单状态">
+                <template slot-scope="scope">
+                    {{ String(scope.row.state) === '0' ? '已禁用' : '正常' }}
+                </template>
+            </el-table-column>
+            <!--<el-table-column label="操作" width="160" align="center">
+                <template slot-scope="scope">
+                    <el-button type="text" size="small" class="blueBug" @click="editHandle(scope.row)">修改</el-button>
+                    <el-button type="text" size="small" class="delBut non" @click="deleteHandle(scope.row.id)">停用</el-button>
+                </template>
+            </el-table-column>-->
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[5, 10, 15, 20]"
+                :page-size="pagination.pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="pagination.counts"
+                @size-change="handleSizeChange"
+                :current-page.sync="pagination.page"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+    </div>
+</div>
+<script src="../../../plugins/vue/vue.js"></script>
+<script src="../../../plugins/element-ui/index.js"></script>
+<script src="../../../plugins/axios/axios.min.js"></script>
+<script src="../../../js/request.js"></script>
+<script src="../../../api/sysModule.js"></script>
+<script type="text/javascript">
+    new Vue({
+        el: '#sysModule-app',
+        data() {
+            return {
+                action: '',
+                type: '',
+                pagination:{
+                    tableData: [],
+                    page: 1,
+                    pageSize: 5,
+                    counts:0,
+                },
+                conditions:{
+                    input:''
+                }
+            }
+        },
+        methods: {
+            async init() {
+                const params = {
+                    page: this.pagination.page,//当前页码
+                    pageSize: this.pagination.pageSize,//每页大小
+                    name: this.conditions.input ? this.conditions.input : undefined//企业名称
+                };
+                await getModulePage(params).then(res => {
+                    // console.log(res.data.records)
+                    if (String(res.code) === '1') {
+                        this.pagination.tableData = res.data.records;
+                        this.pagination.counts = res.data.total;
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            handleQuery() {
+                this.pagination.page = 1;
+                this.init();
+            },
+            // 全部操作
+            handleSelectionChange(val) {
+                let checkArr = [];
+                val.forEach((n) => {
+                    checkArr.push(n.id)
+                });
+                this.checkList = checkArr
+            },
+            handleSizeChange(val) {
+                this.pagination.pageSize = val;
+                this.init()
+            },
+            handleCurrentChange(val) {
+                this.pagination.page = val;
+                this.init()
+            }
+        },
+        created() {
+            this.init()
+        }
+    })
+</script>
+</body>
+</html>

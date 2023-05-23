@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxl.agro.mapper.SmartDeviceDataLogsMapper">
+
+
+
+
+    <!-- 查询最近的10个温湿度传感器-->
+    <select id="selectByDeviceIdAndLimitNumAndTypeId" resultType="com.lxl.agro.vo.OptionVo">
+
+        select create_time value , result_data_value label from sa_agro_smartdevice_data_logs where result_code=200
+    and device_id=#{deviceId} and type_id=#{typeId}
+        order by id desc
+     limit #{pageNum}
+
+
+    </select>
+
+
+
+
+
+</mapper>

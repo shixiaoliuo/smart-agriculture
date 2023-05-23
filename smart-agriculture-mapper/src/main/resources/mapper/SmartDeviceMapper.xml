@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lxl.agro.mapper.SmartDeviceMapper">
+
+
+    <!--修改设备状态-->
+    <update id="updateFlagById" >
+
+        update sa_agro_smartdevice set flag=#{flag} where id=#{id}
+
+    </update>
+
+
+  <!--  //根据设施id获取设备列表-->
+    <select id="selectByfacilitiesId" resultType="com.lxl.agro.pojo.SmartDevice" >
+        select *
+        from sa_agro_smartdevice
+        where state = 1
+          and facilities_id = #{facilitiesId}
+    </select>
+    <select id="selectOptions" resultType="com.lxl.agro.vo.OptionVo">
+        select id value, type_name label
+        from sa_agro_smartdevice_type
+
+    </select>
+    <select id="selectByFacilitiesId" resultType="com.lxl.agro.vo.OptionVo">
+        select id value,device_name label from sa_agro_smartdevice where facilities_id=#{facilitiesId}
+    </select>
+
+    <!--根据大棚的id查询下面的设备信息-->
+<!--    <select id="selectOptions" resultType="com.lxl.agro.vo.OptionVo" >-->
+<!--        select id value,device_name label  from sa_agro_smartdevice where state=1 and facilities_id=#{facilitiesId}-->
+<!--    </select>-->
+
+</mapper>

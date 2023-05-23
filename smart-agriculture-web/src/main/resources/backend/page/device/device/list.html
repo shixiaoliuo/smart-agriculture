@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备分类</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../../styles/common.css"/>
+    <link rel="stylesheet" href="../../../styles/page.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="DEVICE-app">
+    <div class="container">
+        <div class="tableBar">
+
+
+            <span>
+            <el-select v-model="facilitiesIdSelect"
+                       placeholder="请选择所属大棚"
+                       @click.native="selectFacilitiesFun()"
+                       style="width: 250px;float: left"
+            >
+
+                <el-option
+                        v-for="item in facilitiesOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+
+                        @click.native="handleQuery"
+                >
+                </el-option>
+            </el-select>
+
+
+
+
+                 <el-input
+                         v-model="input"
+                         placeholder="请输入设备名称"
+                         style="width: 250px;float: left"
+                         clearable
+                         @keyup.enter.native="handleQuery"
+                 >
+                <i
+                        slot="prefix"
+                        class="el-input__icon el-icon-search"
+                        style="cursor: pointer"
+                        @click="init"
+                ></i>
+
+            </el-input>
+
+
+                 <el-button   @click="clearQuery">清空查询条件</el-button>
+            </span>
+
+
+
+
+            <div class="tableLab">
+                <el-button  type="primary" class="continue" @click="addClass('class')"> + 新增设备 </el-button>
+            </div>
+        </div>
+        <el-table  :data="tableData"  stripe  class="tableBox" >
+
+
+            <el-table-column  prop="deviceName" label="设备名称"  /></el-table-column>
+            <el-table-column  prop="facilitiesName" label="所属大棚"  /></el-table-column>
+         <!--   <el-table-column  prop="facilitiesId" label="所属农业设施id"  /></el-table-column>
+            <el-table-column  prop="typeId" label="设备类型id"  /></el-table-column>-->
+            <el-table-column  prop="typeName" label="设备类型名称"  /></el-table-column>
+
+            <el-table-column  prop="deviceId" label="对接设备设备id"  /></el-table-column>
+
+            <el-table-column  prop="pointId" label="对接设备点位id"  /></el-table-column>
+
+            <el-table-column   label="设备使用状态"  />
+            <template  slot-scope="scope" >
+                <el-switch  @change="stateChangeFun(scope.row.id)" v-model="scope.row.state" :active-value="1" :inactive-value="0" ></el-switch>
+            </template>
+            </el-table-column>
+
+
+
+            <el-table-column   label="设备工作状态" >
+                <template slot-scope="scope">
+                    {{ String(scope.row.flag) === '1' ? '正常' : '异常' }}
+                </template>
+             </el-table-column>
+
+
+
+            <el-table-column  prop="remark" label="设备说明"  /></el-table-column>
+
+
+
+            <el-table-column label="操作" width="160" align="center">
+                <template slot-scope="scope">
+                    <el-button type="text" size="small" class="blueBug" @click="editHandle(scope.row)">修改</el-button>
+                    <el-button type="text" size="small" class="delBut non" @click="deleteHandle(scope.row.id)">停用</el-button>
+
+
+
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[5, 10, 15, 20]"
+                :page-size="pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="counts"
+                @size-change="handleSizeChange"
+                :current-page.sync="page"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+    </div>
+    <el-dialog :title="classData.title" :visible.sync="classData.dialogVisible" width="30%" :before-close="handleClose">
+        <el-form class="demo-form-inline" label-width="100px">
+            <el-form-item label="设备名称：">
+                <el-input v-model="classData.deviceName" placeholder="请输入设备名称" maxlength="14"/>
+            </el-form-item>
+
+
+
+            <el-form-item label="所属大棚：">
+                <el-select v-model="classData.facilitiesId" placeholder="请选择所属大棚"
+                           @click.native="selectFacilitiesFun()" >
+
+                    <el-option
+                            v-for="item in facilitiesOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                            @click.native="getFacilitiesOptionsValue(item.label)"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="设备类型：">
+                <el-select v-model="classData.typeId" placeholder="请选择设备类型"
+                           @click.native="selectDeviceTypeFun()" >
+
+                    <el-option
+                            v-for="item in deviceTypeOptions"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                            @click.native="getDeviceTypeOptionsValue(item.label)"
+                    >
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+
+            <el-form-item label="对接设备id：">
+                <el-input v-model="classData.deviceId" placeholder="请输入对接设备id" maxlength="55"/>
+            </el-form-item>
+
+            <el-form-item label="对接设备pointId：">
+                <el-input v-model="classData.pointId" placeholder="请输入对接设备pointId" maxlength="55"/>
+            </el-form-item>
+
+            <el-form-item label="设备使用状态：">
+                <template>
+                    <el-radio v-model="classData.state" label="1">可用</el-radio>
+                    <el-radio v-model="classData.state" label="0">不可用</el-radio>
+                </template>
+            </el-form-item>
+
+            <el-form-item label="设备工作状态：">
+
+
+                <template>
+                    <el-radio v-model="classData.flag" label="1" >可用</el-radio>
+                    <el-radio v-model="classData.flag" label="0">不可用</el-radio>
+                </template>
+            </el-form-item>
+
+            <el-form-item label="硬件描述：">
+                <el-input v-model="classData.remark" placeholder="请输入硬件描述" />
+            </el-form-item>
+
+
+
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+        <el-button size="medium" @click="classData.dialogVisible = false">取 消</el-button>
+        <el-button type="primary" size="medium" @click="submitForm()">确 定</el-button>
+        <el-button
+                v-if="action != 'edit'"
+                type="primary"
+                size="medium"
+                class="continue"
+                @click="submitForm('go')"
+        > 保存并继续添加 </el-button>
+      </span>
+    </el-dialog>
+</div>
+<script src="../../../plugins/vue/vue.js"></script>
+<script src="../../../plugins/element-ui/index.js"></script>
+<script src="../../../plugins/axios/axios.min.js"></script>
+<script src="../../../js/request.js"></script>
+<script src="../../../api/device.js"></script>
+<script src="../../../api/deviceType.js"></script>
+<script src="../../../api/facilities.js"></script>
+<script type="text/javascript">
+    new Vue({
+        el: '#DEVICE-app',
+        data() {
+            return {
+                action: '',
+                tableData: [],
+                type: '',
+                classData: {
+                    'title': '添加设备',
+                    'dialogVisible': false,
+                    'id': '',
+                    'deviceName': '',
+                    'facilitiesId':'',
+                    'facilitiesName':'',
+                    'typeId': '',
+                    'typeName': '',
+                    'state': '1',
+                    'flag': '1',
+                    'remark': '',
+                    'deviceId':'',
+                    "pointId":''
+
+                },
+                facilitiesIdSelect:'',
+                deviceTypeOptions:[],
+                facilitiesOptions:[],
+                companyNameList: [],
+                companyNameList2: [],
+                page: 1,
+                pageSize: 5,
+                counts:0,
+                input:'',
+                deviceId:'',
+            }
+        },
+        methods: {
+            async init() {
+                const params = {
+                    page: this.page,//当前页码
+                    pageSize: this.pageSize,//每页大小
+                    name: this.input ? this.input : undefined,//企业名称
+                    facilitiesId: this.facilitiesIdSelect ?this.facilitiesIdSelect :undefined //设施id->大棚id
+                };
+                await getDevicePage(params).then(res => {
+                    console.log(res.data.records)
+                    if (String(res.code) === '1') {
+                        this.tableData = res.data.records;
+                        this.counts = res.data.total;
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            handleQuery() {
+                this.page = 1;
+                this.init();
+            },
+            clearQuery(){
+                this.page = 1;
+                this.facilitiesIdSelect='';
+                this.input='',
+                    this.init();
+            },
+            // 添加
+            addClass(st) {
+                this.classData.title = '新增设备';
+                this.action = 'add';
+
+                this.classData.id = '';
+                this.classData.deviceName = '';
+                this.classData.facilitiesId = '';
+                this.classData.typeId = '';
+                this.classData.typeName = '';
+                this.classData.state = '';
+                this.classData.flag = '';
+                this.classData.remark = '';
+                this.classData.deviceId = '';
+                this.classData.pointId = '';
+
+
+
+
+
+                this.classData.dialogVisible = true
+
+            },
+
+            //修改状态
+            stateChangeFun(paramId){
+
+                const params = {
+                    deviceId: paramId ? paramId : undefined,//设备id
+                    userId: this.userId ?this.userId :undefined //userId
+                };
+                 updateStateById(params).then(res => {
+
+                    if (String(res.code) === '1') {
+
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+
+
+            selectDeviceTypeFun(){
+
+                selectDeviceTypeOptions().then(res => {
+                    console.log(res.data)
+                    const resData=res.data
+                    if (String(res.code) === '1') {
+                        this.deviceTypeOptions=[]
+                        for(var i=0;i <resData.length;i++){
+                            this.deviceTypeOptions.push({"value":resData[i].value,"label":resData[i].label})
+                        }
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            getDeviceTypeOptionsValue(e){
+                this.classData.typeName=e
+            },
+
+
+            selectFacilitiesFun(){
+                selectFacilitiesOptions().then(res => {
+                    console.log(res.data)
+                    const resData=res.data
+                    if (String(res.code) === '1') {
+                        this.facilitiesOptions=[]
+                        for(var i=0;i <resData.length;i++){
+                            this.facilitiesOptions.push({"value":resData[i].value,"label":resData[i].label})
+                        }
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            getFacilitiesOptionsValue(e){
+                this.classData.facilitiesName=e;
+            },
+
+
+            editHandle(dat) {
+                console.log(dat)
+                //赋值
+                this.classData.title = '修改设备';
+                this.action = 'edit';
+                this.classData.id = dat.id;
+                this.classData.deviceName = dat.deviceName;
+                this.classData.facilitiesId = dat.facilitiesId;
+                this.classData.typeId = dat.typeId;
+                this.classData.typeName = dat.typeName;
+                this.classData.state = dat.state;
+                this.classData.flag = dat.flag;
+                this.classData.remark = dat.remark;
+                this.classData.deviceId = dat.deviceId;
+                this.classData.pointId = dat.pointId;
+
+                this.classData.dialogVisible = true;//打开修改框
+            },
+            // 关闭弹窗
+            handleClose(st) {
+                this.classData.dialogVisible = false
+            },
+            //删除
+            deleteHandle(id) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    'confirmButtonText': '确定',
+                    'cancelButtonText': '取消',
+                    'type': 'warning'
+                }).then(() => {
+                    deleteDevice(id).then(res => {
+                        if (res.code === 1) {
+                            this.$message.success('删除成功！');
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                })
+            },
+            //数据提交
+            submitForm(st) {
+                const classData = this.classData;
+
+                if (this.action === 'add') {
+
+                            addDevice(classData).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('添加成功！')
+                                    if (!st) {
+                                        this.classData.dialogVisible = false
+                                    } else {
+                                        this.classData = {};
+                                    }
+                                    this.handleQuery()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+
+                } else if (this.action === 'edit') {
+                    editDevice(classData).then(res => {
+                        if (res.code === 1) {
+                                this.$message.success('修改成功！');
+                                this.classData.dialogVisible = false;
+                                this.handleQuery()
+                            } else {
+                                this.$message.error(res.msg || '操作失败')
+                            }
+                        }).catch(err => {
+                            this.$message.error('请求出错了：' + err)
+                        })
+
+                } else {
+                    this.$message.error('请输入名称')
+                }
+            },
+            // 全部操作
+            handleSelectionChange(val) {
+                let checkArr = []
+                val.forEach((n) => {
+                    checkArr.push(n.id)
+                })
+                this.checkList = checkArr
+            },
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.init()
+            },
+            handleCurrentChange(val) {
+                this.page = val
+                this.init()
+            }
+        },
+        created() {
+            this.init()
+        },
+
+
+    })
+</script>
+</body>
+</html>

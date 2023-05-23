@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原料厂商管理</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../styles/common.css"/>
+    <link rel="stylesheet" href="../../styles/page.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="factory-app">
+    <div class="container">
+        <div class="tableBar">
+            <span>
+                 <el-input  v-model="conditions.input" placeholder="请输入农作物名称" style="width: 250px;float: left" clearable @keyup.enter.native="handleQuery">
+                 <i slot="prefix" class="el-input__icon el-icon-search" style="cursor: pointer" @click="init"></i>
+            </el-input>
+                 <el-button   @click="clearQuery">清空查询条件</el-button>
+            </span>
+            <div class="tableLab">
+                <el-button  type="primary" class="continue" @click="addClass('class')"> + 新增厂商 </el-button>
+            </div>
+        </div>
+        <el-table  :data="pagination.tableData"  stripe  class="tableBox" >
+            <el-table-column  prop="name" label="厂商名称"  /></el-table-column>
+            <el-table-column  prop="address" label="厂商地址"  /></el-table-column>
+            <el-table-column  prop="linkMan" label="厂商联系人"  /></el-table-column>
+            <el-table-column  prop="phone" label="厂商电话"  /></el-table-column>
+            <el-table-column  prop="state" label="厂商状态"  /></el-table-column>
+            <el-table-column  prop="createTime" label="创建时间"  /></el-table-column>
+            <el-table-column label="操作" width="160" align="center">
+                <template slot-scope="scope">
+                    <el-button type="text" size="small" class="blueBug" @click="editHandle(scope.row)">修改</el-button>
+                    <el-button type="text" size="small" class="delBut non" @click="deleteHandle(scope.row.id)">停用</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[5, 10, 15, 20]"
+                :page-size="pagination.pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="pagination.counts"
+                @size-change="handleSizeChange"
+                :current-page.sync="pagination.page"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+    </div>
+    <el-dialog :title="classData.title" :visible.sync="classData.dialogVisible" width="30%" :before-close="handleClose">
+        <el-form class="demo-form-inline" label-width="100px">
+            <el-form-item label="厂商名称：">
+                <el-input v-model="classData.formData.name" placeholder="请输入厂商名称" />
+            </el-form-item>
+
+            <el-form-item label="厂商地址：">
+                <el-input v-model="classData.formData.address" placeholder="请输入地址" />
+            </el-form-item>
+
+            <el-form-item label="厂商联系人：">
+                <el-input v-model="classData.formData.linkMan" placeholder="请输入联系人" />
+            </el-form-item>
+
+            <el-form-item label="厂商电话：">
+                <el-input v-model="classData.formData.phone" placeholder="请输入厂商电话" />
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+        <el-button size="medium" @click="classData.dialogVisible = false">取 消</el-button>
+        <el-button type="primary" size="medium" @click="submitForm()">确 定</el-button>
+      </span>
+    </el-dialog>
+</div>
+<script src="../../plugins/vue/vue.js"></script>
+<script src="../../plugins/element-ui/index.js"></script>
+<script src="../../plugins/axios/axios.min.js"></script>
+<script src="../../js/request.js"></script>
+<script src="../../api/sysRole.js"></script>
+<script src="../../api/factory.js"></script>
+<script type="text/javascript">
+    new Vue({
+        el: '#factory-app',
+        data() {
+            return {
+                action: '',
+                type: '',
+                classData: {
+                    'title': '添加农作物',
+                    'dialogVisible': false,
+                    formData:{}
+                },
+                pagination:{
+                    tableData: [],
+                    page: 1,
+                    pageSize: 5,
+                    counts:0,
+                },
+                conditions: {
+                    input: ''
+                }
+            }
+        },
+        methods: {
+            async init() {
+                const params = {
+                    //拼接参数
+                };
+                await getFactoryPage(params).then(res => {
+                    console.log(res.data.records)
+                    if (String(res.code) === '1') {
+                        //给变量赋值
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                })
+            },
+            handleQuery() {
+                this.page = 1;
+                this.init();
+            },
+            clearQuery(){
+                this.page = 1;
+                this.input='',
+                this.init();
+            },
+            // 添加
+            addClass(st) {
+                this.classData.title = '新增农作物';
+                this.action = 'add';
+                this.classData.dialogVisible = true
+            },
+
+            //修改
+            editHandle(dat) {
+                console.log(dat)
+                //赋值
+                this.classData.title = '修改设施';
+                this.action = 'edit';
+                this.classData.formData = dat;
+                this.classData.dialogVisible = true;//打开修改框
+            },
+            // 关闭弹窗
+            handleClose(st) {
+                this.classData.dialogVisible = false
+            },
+            //删除
+            deleteHandle(id) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    'confirmButtonText': '确定',
+                    'cancelButtonText': '取消',
+                    'type': 'warning'
+                }).then(() => {
+                    deleteFactory(id).then(res => {
+                        if (res.code === 1) {
+                            this.$message.success('删除成功！');
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                })
+            },
+            //数据提交
+            submitForm(st) {
+                const classData = this.classData.formData;
+                if (this.action === 'add') {
+                            addFactory(classData).then(res => {
+                                if (res.code === 1) {
+                                    this.$message.success('添加成功！')
+                                    if (!st) {
+                                        this.classData.dialogVisible = false
+                                    } else {
+                                        this.classData.formData = {};
+                                    }
+                                    this.handleQuery()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+
+                } else if (this.action === 'edit') {
+                    editFactory(classData).then(res => {
+                        if (res.code === 1) {
+                                this.$message.success('修改成功！');
+                                this.classData.dialogVisible = false;
+                                this.handleQuery()
+                            } else {
+                                this.$message.error(res.msg || '操作失败')
+                            }
+                        }).catch(err => {
+                            this.$message.error('请求出错了：' + err)
+                        })
+
+                } else {
+                    this.$message.error('请输入名称')
+                }
+            },
+            // 全部操作
+            handleSelectionChange(val) {
+                let checkArr = [];
+                val.forEach((n) => {
+                    checkArr.push(n.id)
+                });
+                this.checkList = checkArr
+            },
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.init()
+            },
+            handleCurrentChange(val) {
+                this.page = val;
+                this.init()
+            }
+        },
+        created() {
+            this.init()
+        },
+    })
+</script>
+</body>
+</html>
