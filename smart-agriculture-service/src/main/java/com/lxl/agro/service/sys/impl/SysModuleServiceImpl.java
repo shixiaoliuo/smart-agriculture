@@ -1,6 +1,7 @@
 package com.lxl.agro.service.sys.impl;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lxl.agro.common.SysUserHolder;
@@ -39,7 +40,7 @@ public class SysModuleServiceImpl extends ServiceImpl<SysModuleMapper, SysModule
     @Override
     public List<SysModule> getByUserId(Long userId) {
         String cacheMenu = (String) redisTemplate.opsForValue().get(userId.toString());
-        List<SysModule> list = JSONObject.parseObject(cacheMenu, List.class);
+        List<SysModule> list = JSONObject.parseObject(cacheMenu, new TypeReference<List<SysModule>>() {});
         if (list!=null){
             return list;
         }
