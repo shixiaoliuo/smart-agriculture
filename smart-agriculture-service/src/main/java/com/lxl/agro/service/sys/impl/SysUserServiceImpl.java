@@ -2,8 +2,10 @@ package com.lxl.agro.service.sys.impl;
 
 import cn.hutool.crypto.SecureUtil;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.lxl.agro.common.Constant;
 import com.lxl.agro.common.CustomException;
 import com.lxl.agro.common.ResultInfo;
 import com.lxl.agro.common.SysUserHolder;
@@ -67,7 +69,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         String token = JwtUtil.createJWT(sysUser.getId().toString(), JSON.toJSONString(sysUser), 3600000L);
 
         List<SysModule> modules = sysModuleService.getByUserId(sysUser.getId());
-        redisTemplate.opsForValue().set(sysUser.getId().toString(), modules);
+//        String menu = JSONObject.toJSONString(modules);
+//        redisTemplate.opsForValue().set(sysUser.getId().toString(), menu);
+
 
         return ResultInfo.success(token);
     }

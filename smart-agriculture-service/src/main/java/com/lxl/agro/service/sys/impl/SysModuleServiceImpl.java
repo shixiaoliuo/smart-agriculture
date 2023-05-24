@@ -1,12 +1,15 @@
 package com.lxl.agro.service.sys.impl;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.lxl.agro.common.SysUserHolder;
 import com.lxl.agro.mapper.SysModuleMapper;
 import com.lxl.agro.mapper.SysRoleMapper;
 import com.lxl.agro.pojo.SysModule;
-import com.lxl.agro.pojo.SysRole;
+import com.lxl.agro.pojo.SysUser;
 import com.lxl.agro.service.sys.SysModuleService;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +28,22 @@ public class SysModuleServiceImpl extends ServiceImpl<SysModuleMapper, SysModule
     private final SysModuleMapper sysModuleMapper;
     private final SysRoleMapper sysRoleMapper;
 
-    public SysModuleServiceImpl(SysModuleMapper sysModuleMapper, SysRoleMapper sysRoleMapper) {
+    private final RedisTemplate redisTemplate;
+
+    public SysModuleServiceImpl(SysModuleMapper sysModuleMapper, SysRoleMapper sysRoleMapper, RedisTemplate redisTemplate) {
         this.sysModuleMapper = sysModuleMapper;
         this.sysRoleMapper = sysRoleMapper;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
     public List<SysModule> getByUserId(Long userId) {
+        String cacheMenu = (String) redisTemplate.opsForValue().get(userId.toString());
+        List<SysModule> list = JSONObject.parseObject(cacheMenu, List.class);
+        if (list!=null){
+            return list;
+        }
+
         List<SysModule> modules = sysModuleMapper.selectByUserId(userId);
         for (SysModule module : modules) {
             LambdaQueryWrapper<SysModule> wrapper = new LambdaQueryWrapper<>();
@@ -39,6 +51,8 @@ public class SysModuleServiceImpl extends ServiceImpl<SysModuleMapper, SysModule
             List<SysModule> children = sysModuleMapper.selectList(wrapper);
             module.setChildren(children);
         }
+        String menu = JSONObject.toJSONString(modules);
+        redisTemplate.opsForValue().set(userId.toString(), menu);
         return modules;
     }
 

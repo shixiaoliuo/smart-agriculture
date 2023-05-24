@@ -19,7 +19,7 @@ spring:
       max-request-size: 100MB # 最大请求文件大小,默认10MB
       max-file-size: 10MB # 单个请求文件大小,默认1MB
   redis:
-    host: 10.9.42.251
+    host: 47.97.65.101
     port: 6379
     database: 0
 mybatis-plus:
