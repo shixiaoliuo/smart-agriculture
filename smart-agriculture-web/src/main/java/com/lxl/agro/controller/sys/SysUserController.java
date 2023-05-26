@@ -23,6 +23,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/sys/user")
+@CrossOrigin
 public class SysUserController {
 
     private final SysUserService sysUserService;
@@ -32,7 +33,6 @@ public class SysUserController {
     }
 
     @PostMapping("/login")
-    @CrossOrigin
     public ResultInfo login(@RequestBody Map<String, String> map) {
         String username = map.get("username");
         String password = map.get("password");

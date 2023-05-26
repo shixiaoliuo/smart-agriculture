@@ -78,7 +78,7 @@
                     name: this.conditions.input ? this.conditions.input : undefined//企业名称
                 };
                 await getModulePage(params).then(res => {
-                    // console.log(res.data.records)
+                    // console.log(res)
                     if (String(res.code) === '1') {
                         this.pagination.tableData = res.data.records;
                         this.pagination.counts = res.data.total;

@@ -72,6 +72,7 @@ public class SysModuleController {
         LambdaQueryWrapper<SysModule> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(name != null, SysModule::getName, name);
         sysModuleService.page(pageInfo, wrapper);
+//        Page<SysModule> pageInfo = sysModuleService.getPage(page,pageSize,name);
         return ResultInfo.success(pageInfo);
     }
 

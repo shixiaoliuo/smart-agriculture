@@ -36,6 +36,11 @@
         from sa_sys_module
         where parent_id = #{parentId}
     </select>
+    <select id="selectUserIdByRoleId" resultType="java.lang.Long">
+        select id
+        from sa_sys_user
+        where id in (select user_id from sa_sys_user_role where role_id = #{roleId})
+    </select>
 
     <!--插入用户角色中间表数据-->
     <insert id="insertUserRole" parameterType="map">

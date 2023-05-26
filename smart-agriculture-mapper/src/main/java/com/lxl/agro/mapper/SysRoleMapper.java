@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- *
  * @company：千峰教育
  * @author：zhy
  * @date：2023-02-17
@@ -19,6 +18,7 @@ public interface SysRoleMapper extends BaseMapper<SysRole> {
 
     /**
      * 根据用户id，查询用户具备的角色
+     *
      * @param userId
      * @return
      */
@@ -26,19 +26,22 @@ public interface SysRoleMapper extends BaseMapper<SysRole> {
 
     /**
      * 根据用户id删除用户角色关联表中数据
+     *
      * @param userId
      */
     int deleteByUserId(Long userId);
 
     /**
      * 批量插入用户角色关联信息
+     *
      * @param userId
      * @param roleIds
      */
-    int insertUserRole(Long userId,List roleIds);
+    int insertUserRole(Long userId, List roleIds);
 
     /**
      * 根据roleid，查询用户具备的权限
+     *
      * @param roleId
      * @return
      */
@@ -49,4 +52,6 @@ public interface SysRoleMapper extends BaseMapper<SysRole> {
     void deleteByRoleId(Long roleId);
 
     List<SysModule> selectByParentId(Long parentId);
+
+    List<Long> selectUserIdByRoleId(Long roleId);
 }

@@ -116,7 +116,7 @@
                     $.ajax({
                         url: 'http://127.0.0.1:8080/facilities/facilities/selectOptionsByCompanyId',
                         type: 'get',
-                        data: {'companyId': '1'},//此处不能这么写，要从登录信息里获取1630733260198899714
+                        data: {'companyId': '1630733260198899714'},//此处不能这么写，要从登录信息里获取1630733260198899714
                         headers: {
                             "Authorization": window.localStorage.getItem("authorization")
                         },

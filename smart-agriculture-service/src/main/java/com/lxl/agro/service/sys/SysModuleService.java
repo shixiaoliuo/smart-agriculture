@@ -1,5 +1,6 @@
 package com.lxl.agro.service.sys;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lxl.agro.pojo.SysModule;
 import com.lxl.agro.pojo.SysRole;
@@ -21,4 +22,6 @@ public interface SysModuleService extends IService<SysModule> {
     boolean modifyRoleModule(Long roleId, List<Long> moduleIds);
 
     List<SysModule> getList();
+
+    Page<SysModule> getPage(Integer page, Integer pageSize, String name);
 }

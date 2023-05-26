@@ -3,6 +3,7 @@ package com.lxl.agro.service.sys.impl;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lxl.agro.common.SysUserHolder;
 import com.lxl.agro.mapper.SysModuleMapper;
@@ -40,8 +41,9 @@ public class SysModuleServiceImpl extends ServiceImpl<SysModuleMapper, SysModule
     @Override
     public List<SysModule> getByUserId(Long userId) {
         String cacheMenu = (String) redisTemplate.opsForValue().get(userId.toString());
-        List<SysModule> list = JSONObject.parseObject(cacheMenu, new TypeReference<List<SysModule>>() {});
-        if (list!=null){
+        List<SysModule> list = JSONObject.parseObject(cacheMenu, new TypeReference<List<SysModule>>() {
+        });
+        if (list != null) {
             return list;
         }
 
@@ -52,6 +54,7 @@ public class SysModuleServiceImpl extends ServiceImpl<SysModuleMapper, SysModule
             List<SysModule> children = sysModuleMapper.selectList(wrapper);
             module.setChildren(children);
         }
+
         String menu = JSONObject.toJSONString(modules);
         redisTemplate.opsForValue().set(userId.toString(), menu);
         return modules;
@@ -73,11 +76,25 @@ public class SysModuleServiceImpl extends ServiceImpl<SysModuleMapper, SysModule
     }
 
     @Override
+    public Page<SysModule> getPage(Integer page, Integer pageSize, String name) {
+        Page<SysModule> pageInfo = new Page<>(page, pageSize);
+        LambdaQueryWrapper<SysModule> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(name != null, SysModule::getName, name);
+        return sysModuleMapper.selectPage(pageInfo, wrapper);
+    }
+
+    @Override
     @Transactional
     public boolean modifyRoleModule(Long roleId, List<Long> moduleIds) {
-        List<SysModule> list = sysRoleMapper.selectByRoleId(roleId);
+
+//        List<SysModule> list = sysRoleMapper.selectByRoleId(roleId);
         sysRoleMapper.deleteByRoleId(roleId);
         int count = sysRoleMapper.insertRoleModule(roleId, moduleIds);
+
+        List<Long> list = sysRoleMapper.selectUserIdByRoleId(roleId);
+        for (Long userId : list) {
+            redisTemplate.delete(userId.toString());
+        }
         return count > 0;
     }
 }
