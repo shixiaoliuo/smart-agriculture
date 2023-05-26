@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lxl.agro.mapper.SysRoleMapper;
 import com.lxl.agro.pojo.SysRole;
 import com.lxl.agro.service.sys.SysRoleService;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +22,11 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
 
     private final SysRoleMapper sysRoleMapper;
 
-    public SysRoleServiceImpl(SysRoleMapper sysRoleMapper) {
+    private final RedisTemplate redisTemplate;
+
+    public SysRoleServiceImpl(SysRoleMapper sysRoleMapper, RedisTemplate redisTemplate) {
         this.sysRoleMapper = sysRoleMapper;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -34,7 +38,12 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     @Transactional
     public boolean modifyUserRole(Long userId, List<Long> roleIds) {
         sysRoleMapper.deleteByUserId(userId);
+
         int count = sysRoleMapper.insertUserRole(userId, roleIds);
+
+
+        redisTemplate.delete(userId.toString());
+
         return count > 0;
     }
 }
